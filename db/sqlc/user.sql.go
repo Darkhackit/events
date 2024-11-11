@@ -32,3 +32,32 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 	)
 	return i, err
 }
+
+const getUsers = `-- name: GetUsers :many
+SELECT id, username, email, password FROM users
+`
+
+func (q *Queries) GetUsers(ctx context.Context) ([]Users, error) {
+	rows, err := q.db.Query(ctx, getUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Users{}
+	for rows.Next() {
+		var i Users
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.Password,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

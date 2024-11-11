@@ -1,5 +1,9 @@
 package domain
 
+import (
+	"context"
+)
+
 type User struct {
 	Username string
 	Email    string
@@ -7,5 +11,6 @@ type User struct {
 }
 
 type UserRepository interface {
-	CreateUser(user User) (*User, error)
+	CreateUser(ctx context.Context, user User) (*User, error)
+	GetUsers(ctx context.Context) ([]User, error)
 }

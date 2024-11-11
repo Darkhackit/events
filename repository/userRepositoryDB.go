@@ -1,9 +1,10 @@
-package respository
+package repository
 
 import (
 	"context"
 	db "github.com/Darkhackit/events/db/sqlc"
 	"github.com/Darkhackit/events/domain"
+	"github.com/Darkhackit/events/events"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,16 +38,32 @@ func (us *UserRepositoryDB) CreateUser(ctx context.Context, user domain.User) (*
 		return nil, err
 	}
 
-	duser := &domain.User{
+	duser := domain.User{
 		Username: u.Username.String,
 		Email:    u.Email.String,
 		Password: u.Password.String,
 	}
 
-	return duser, nil
+	events.Dispatch.Dispatch(events.UserCreatedEvent{User: duser})
+	return &duser, nil
 
 }
 
-func NewUserRepositoryDB(q *db.Queries) UserRepositoryDB {
-	return UserRepositoryDB{q: q}
+func (us *UserRepositoryDB) GetUsers(ctx context.Context) ([]domain.User, error) {
+	rows, err := us.q.GetUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	users := make([]domain.User, len(rows))
+	for i, row := range rows {
+		users[i] = domain.User{
+			Username: row.Username.String,
+			Email:    row.Email.String,
+		}
+	}
+	return users, nil
+}
+
+func NewUserRepositoryDB(q *db.Queries) *UserRepositoryDB {
+	return &UserRepositoryDB{q: q}
 }
