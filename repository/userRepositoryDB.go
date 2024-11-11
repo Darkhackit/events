@@ -2,15 +2,57 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	db "github.com/Darkhackit/events/db/sqlc"
 	"github.com/Darkhackit/events/domain"
+	"github.com/Darkhackit/events/dto"
 	"github.com/Darkhackit/events/events"
+	token2 "github.com/Darkhackit/events/token"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
+	"time"
 )
 
 type UserRepositoryDB struct {
 	q *db.Queries
+}
+
+func (us *UserRepositoryDB) Login(ctx context.Context, logins dto.LoginRequest) (*dto.UserResponse, error) {
+
+	user, err := us.q.GetUser(ctx, pgtype.Text{
+		String: logins.Username,
+		Valid:  logins.Username != "",
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("username or password is not correct")
+		}
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password.String), []byte(logins.Password))
+	if err != nil {
+		return nil, fmt.Errorf("username or password is not correct")
+	}
+	tokenP, err := token2.NewPasetoToken()
+	if err != nil {
+		return nil, err
+	}
+
+	token, payload, err := tokenP.CreateToken(user.Username.String, time.Hour*3)
+	if err != nil {
+		return nil, err
+	}
+	userR := &dto.UserResponse{
+		Email:    user.Email.String,
+		Token:    token,
+		Username: payload.Username,
+	}
+
+	return userR, nil
+
 }
 
 func (us *UserRepositoryDB) CreateUser(ctx context.Context, user domain.User) (*domain.User, error) {
@@ -38,14 +80,14 @@ func (us *UserRepositoryDB) CreateUser(ctx context.Context, user domain.User) (*
 		return nil, err
 	}
 
-	duser := domain.User{
+	dUser := domain.User{
 		Username: u.Username.String,
 		Email:    u.Email.String,
 		Password: u.Password.String,
 	}
 
-	events.Dispatch.Dispatch(events.UserCreatedEvent{User: duser})
-	return &duser, nil
+	events.Dispatch.Dispatch(events.UserCreatedEvent{User: dUser})
+	return &dUser, nil
 
 }
 

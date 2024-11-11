@@ -33,6 +33,22 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 	return i, err
 }
 
+const getUser = `-- name: GetUser :one
+SELECT id, username, email, password FROM users WHERE username = $1
+`
+
+func (q *Queries) GetUser(ctx context.Context, username pgtype.Text) (Users, error) {
+	row := q.db.QueryRow(ctx, getUser, username)
+	var i Users
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Password,
+	)
+	return i, err
+}
+
 const getUsers = `-- name: GetUsers :many
 SELECT id, username, email, password FROM users
 `

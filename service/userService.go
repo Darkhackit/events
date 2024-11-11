@@ -9,10 +9,22 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, user dto.UserRequest) (*dto.UserResponse, error)
 	GetUsers(ctx context.Context) ([]dto.UserResponse, error)
+	LoginUser(ctx context.Context, request dto.LoginRequest) (*dto.UserResponse, error)
 }
 
 type DefaultUserService struct {
 	repo domain.UserRepository
+}
+
+func (d *DefaultUserService) LoginUser(ctx context.Context, request dto.LoginRequest) (*dto.UserResponse, error) {
+	token, err := d.repo.Login(ctx, dto.LoginRequest{
+		Username: request.Username,
+		Password: request.Password,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }
 
 func (d *DefaultUserService) GetUsers(ctx context.Context) ([]dto.UserResponse, error) {

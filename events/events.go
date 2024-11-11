@@ -4,6 +4,7 @@ import (
 	"sync"
 )
 
+// Event Emmanuel Arthur Codes
 type Event interface {
 	Name() string
 }

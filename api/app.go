@@ -24,6 +24,7 @@ func Start() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/users", uh.CreateUser).Methods("POST")
+	router.HandleFunc("/login", uh.LoginUser).Methods("POST")
 	router.HandleFunc("/users", uh.GetUsers).Methods("GET")
 
 	err = http.ListenAndServe(":8000", router)

@@ -19,6 +19,20 @@ func (uh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteResponse(w, http.StatusOK, u)
 }
+func (uh *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
+	var request dto.LoginRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	u, err := uh.service.LoginUser(r.Context(), request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	WriteResponse(w, http.StatusOK, u)
+}
 
 func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var request dto.UserRequest

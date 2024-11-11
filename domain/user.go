@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"github.com/Darkhackit/events/dto"
 )
 
 type User struct {
@@ -13,4 +14,5 @@ type User struct {
 type UserRepository interface {
 	CreateUser(ctx context.Context, user User) (*User, error)
 	GetUsers(ctx context.Context) ([]User, error)
+	Login(ctx context.Context, logins dto.LoginRequest) (*dto.UserResponse, error)
 }
