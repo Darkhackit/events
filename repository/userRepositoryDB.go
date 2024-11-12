@@ -16,7 +16,8 @@ import (
 )
 
 type UserRepositoryDB struct {
-	q *db.Queries
+	q           *db.Queries
+	PasetoToken *token2.PasetoToken
 }
 
 func (us *UserRepositoryDB) Login(ctx context.Context, logins dto.LoginRequest) (*dto.UserResponse, error) {
@@ -36,12 +37,8 @@ func (us *UserRepositoryDB) Login(ctx context.Context, logins dto.LoginRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("username or password is not correct")
 	}
-	tokenP, err := token2.NewPasetoToken()
-	if err != nil {
-		return nil, err
-	}
 
-	token, payload, err := tokenP.CreateToken(user.Username.String, time.Hour*3)
+	token, payload, err := us.PasetoToken.CreateToken(user.Username.String, time.Hour*3)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +103,6 @@ func (us *UserRepositoryDB) GetUsers(ctx context.Context) ([]domain.User, error)
 	return users, nil
 }
 
-func NewUserRepositoryDB(q *db.Queries) *UserRepositoryDB {
-	return &UserRepositoryDB{q: q}
+func NewUserRepositoryDB(q *db.Queries, p *token2.PasetoToken) *UserRepositoryDB {
+	return &UserRepositoryDB{q: q, PasetoToken: p}
 }

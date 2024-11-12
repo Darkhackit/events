@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/Darkhackit/events/dto"
 	"github.com/Darkhackit/events/service"
 	"io"
@@ -17,6 +18,7 @@ func (uh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	fmt.Println(getAuthenticatedUser(r))
 	WriteResponse(w, http.StatusOK, u)
 }
 func (uh *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
