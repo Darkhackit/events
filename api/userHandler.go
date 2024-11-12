@@ -31,19 +31,19 @@ func (uh *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	var request dto.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		WriteResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	validate := validator.New()
 	err = validate.Struct(request)
 	if err != nil {
 		errors := validator2.TransformValidationErrors(err)
-		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusUnprocessableEntity)
+		WriteResponse(w, http.StatusUnprocessableEntity, errors)
 		return
 	}
 	u, err := uh.service.LoginUser(r.Context(), request)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		WriteResponse(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 	WriteResponse(w, http.StatusOK, u)
@@ -68,7 +68,7 @@ func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	err = validate.Struct(request)
 	if err != nil {
 		errors := validator2.TransformValidationErrors(err)
-		WriteResponse(w, http.StatusBadRequest, errors)
+		WriteResponse(w, http.StatusUnprocessableEntity, errors)
 
 		return
 	}

@@ -3,6 +3,7 @@ package events
 import (
 	"fmt"
 	"github.com/Darkhackit/events/domain"
+	"github.com/Darkhackit/events/mail"
 )
 
 type UserCreatedEvent struct {
@@ -15,7 +16,11 @@ func (e UserCreatedEvent) Name() string {
 
 func SendWelcomeEmail(event Event) {
 	if e, ok := event.(UserCreatedEvent); ok {
-		fmt.Printf("Sending welcome email to user with ID: %d\n", e.User.Email)
+		err := mail.SendWelcomeMail(e.User.Email, e.User.Username)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 }
 
