@@ -5,4 +5,4 @@ INSERT INTO users(username , email , password) VALUES ($1 , $2 , $3) RETURNING *
 SELECT * FROM users;
 
 -- name: GetUser :one
-SELECT * FROM users WHERE username = $1;
+SELECT * FROM users WHERE username = $1 LIMIT 1;

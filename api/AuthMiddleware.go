@@ -37,7 +37,7 @@ func AuthMiddleware(pasetoToken *token.PasetoToken) func(http.Handler) http.Hand
 	}
 }
 
-func getAuthenticatedUser(r *http.Request) (*token.Payload, error) {
+func GetAuthenticatedUser(r *http.Request) (*token.Payload, error) {
 	payload, ok := r.Context().Value("auth").(*token.Payload)
 	if !ok || payload == nil {
 		return nil, errors.New("no user authenticated")

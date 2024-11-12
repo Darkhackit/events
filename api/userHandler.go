@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/Darkhackit/events/dto"
 	"github.com/Darkhackit/events/service"
+	validator2 "github.com/Darkhackit/events/validator"
+	"github.com/go-playground/validator/v10"
 	"io"
 	"net/http"
 )
@@ -18,7 +20,11 @@ func (uh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	fmt.Println(getAuthenticatedUser(r))
+	payload, err := GetAuthenticatedUser(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+	}
+	fmt.Println(payload.Username)
 	WriteResponse(w, http.StatusOK, u)
 }
 func (uh *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +32,13 @@ func (uh *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	validate := validator.New()
+	err = validate.Struct(request)
+	if err != nil {
+		errors := validator2.TransformValidationErrors(err)
+		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusUnprocessableEntity)
 		return
 	}
 	u, err := uh.service.LoginUser(r.Context(), request)
@@ -50,6 +63,15 @@ func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}(r.Body)
+
+	validate := validator.New()
+	err = validate.Struct(request)
+	if err != nil {
+		errors := validator2.TransformValidationErrors(err)
+		WriteResponse(w, http.StatusBadRequest, errors)
+
+		return
+	}
 
 	user, err := uh.service.CreateUser(ctx, request)
 	if err != nil {
