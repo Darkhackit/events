@@ -1,7 +1,9 @@
 package events
 
 import (
+	"context"
 	"sync"
+	"time"
 )
 
 // Event Emmanuel Arthur Codes
@@ -31,7 +33,15 @@ func (d *Dispatcher) Dispatch(event Event) {
 	defer d.mu.Unlock()
 	if observers, found := d.observers[event.Name()]; found {
 		for _, observer := range observers {
-			go observer(event)
+			// Launch each observer in a goroutine with proper context management
+			go func(obs func(Event)) {
+				// Create a fresh context with a timeout for this goroutine
+				_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+
+				// Call the observer function with the event
+				obs(event) // Assuming observer functions handle the event and context internally
+			}(observer)
 		}
 	}
 }

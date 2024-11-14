@@ -9,6 +9,7 @@ import (
 	"github.com/Darkhackit/events/dto"
 	"github.com/Darkhackit/events/events"
 	token2 "github.com/Darkhackit/events/token"
+	"github.com/Darkhackit/events/worker"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
@@ -18,6 +19,7 @@ import (
 type UserRepositoryDB struct {
 	q           *db.Queries
 	PasetoToken *token2.PasetoToken
+	distributor worker.TaskDistributor
 }
 
 func (us *UserRepositoryDB) Login(ctx context.Context, logins dto.LoginRequest) (*dto.UserResponse, error) {
@@ -83,7 +85,7 @@ func (us *UserRepositoryDB) CreateUser(ctx context.Context, user domain.User) (*
 		Password: u.Password.String,
 	}
 
-	events.Dispatch.Dispatch(events.UserCreatedEvent{User: dUser})
+	events.Dispatch.Dispatch(events.UserCreatedEvent{User: dUser, TaskDistributor: us.distributor})
 	return &dUser, nil
 
 }
@@ -103,6 +105,6 @@ func (us *UserRepositoryDB) GetUsers(ctx context.Context) ([]domain.User, error)
 	return users, nil
 }
 
-func NewUserRepositoryDB(q *db.Queries, p *token2.PasetoToken) *UserRepositoryDB {
-	return &UserRepositoryDB{q: q, PasetoToken: p}
+func NewUserRepositoryDB(q *db.Queries, p *token2.PasetoToken, distributor worker.TaskDistributor) *UserRepositoryDB {
+	return &UserRepositoryDB{q: q, PasetoToken: p, distributor: distributor}
 }
