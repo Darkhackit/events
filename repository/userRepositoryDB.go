@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	db "github.com/Darkhackit/events/db/sqlc"
 	"github.com/Darkhackit/events/domain"
 	"github.com/Darkhackit/events/dto"
 	"github.com/Darkhackit/events/events"
+	"github.com/Darkhackit/events/sessions"
 	token2 "github.com/Darkhackit/events/token"
 	"github.com/Darkhackit/events/worker"
 	"github.com/jackc/pgx/v5"
@@ -20,6 +22,7 @@ type UserRepositoryDB struct {
 	q           *db.Queries
 	PasetoToken *token2.PasetoToken
 	distributor worker.TaskDistributor
+	redisClient *sessions.RedisClient
 }
 
 func (us *UserRepositoryDB) Login(ctx context.Context, logins dto.LoginRequest) (*dto.UserResponse, error) {
@@ -41,6 +44,14 @@ func (us *UserRepositoryDB) Login(ctx context.Context, logins dto.LoginRequest) 
 	}
 
 	token, payload, err := us.PasetoToken.CreateToken(user.Username.String, time.Hour*3)
+	if err != nil {
+		return nil, err
+	}
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	err = us.redisClient.CreateSession(ctx, payload.ID.String(), string(jsonPayload), time.Hour*2)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +116,6 @@ func (us *UserRepositoryDB) GetUsers(ctx context.Context) ([]domain.User, error)
 	return users, nil
 }
 
-func NewUserRepositoryDB(q *db.Queries, p *token2.PasetoToken, distributor worker.TaskDistributor) *UserRepositoryDB {
-	return &UserRepositoryDB{q: q, PasetoToken: p, distributor: distributor}
+func NewUserRepositoryDB(q *db.Queries, p *token2.PasetoToken, distributor worker.TaskDistributor, redisClient *sessions.RedisClient) *UserRepositoryDB {
+	return &UserRepositoryDB{q: q, PasetoToken: p, distributor: distributor, redisClient: redisClient}
 }

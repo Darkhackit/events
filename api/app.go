@@ -6,6 +6,7 @@ import (
 	db "github.com/Darkhackit/events/db/sqlc"
 	"github.com/Darkhackit/events/repository"
 	"github.com/Darkhackit/events/service"
+	"github.com/Darkhackit/events/sessions"
 	"github.com/Darkhackit/events/token"
 	"github.com/Darkhackit/events/worker"
 	"github.com/gorilla/mux"
@@ -30,11 +31,13 @@ func Start() {
 	if err != nil {
 		panic(err)
 	}
+	redisClient := sessions.NewRedisClient()
+
 	redisOpt := asynq.RedisClientOpt{
 		Addr: "localhost:6379",
 	}
 	distributor := worker.NewRedisTaskDistributor(redisOpt)
-	uh := UserHandler{service: service.NewUserService(repository.NewUserRepositoryDB(queries, PasetoToken, distributor))}
+	uh := UserHandler{service: service.NewUserService(repository.NewUserRepositoryDB(queries, PasetoToken, distributor, redisClient))}
 
 	router := mux.NewRouter()
 
@@ -42,7 +45,7 @@ func Start() {
 	router.HandleFunc("/login", uh.LoginUser).Methods("POST")
 
 	protectedRouter := router.PathPrefix("/").Subrouter()
-	protectedRouter.Use(AuthMiddleware(PasetoToken))
+	protectedRouter.Use(AuthMiddleware(PasetoToken, redisClient))
 	protectedRouter.HandleFunc("/users", uh.GetUsers).Methods("GET")
 
 	//go RunTaskProcessor(redisOpt, queries)
