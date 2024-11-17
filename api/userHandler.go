@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Darkhackit/events/dto"
 	"github.com/Darkhackit/events/service"
 	validator2 "github.com/Darkhackit/events/validator"
@@ -18,13 +17,9 @@ type UserHandler struct {
 func (uh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	u, err := uh.service.GetUsers(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
 	}
-	payload, err := GetAuthenticatedUser(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-	}
-	fmt.Println(payload.Username)
 	WriteResponse(w, http.StatusOK, u)
 }
 func (uh *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {

@@ -37,8 +37,9 @@ func Start() {
 		Addr: "localhost:6379",
 	}
 	distributor := worker.NewRedisTaskDistributor(redisOpt)
-	uh := UserHandler{service: service.NewUserService(repository.NewUserRepositoryDB(queries, PasetoToken, distributor, redisClient))}
-
+	uh := UserHandler{service: service.NewUserService(repository.NewUserRepositoryDB(conn, PasetoToken, distributor, redisClient))}
+	rh := RoleHandler{service: service.NewRoleService(repository.NewRoleRepositoryDB(queries))}
+	ph := PermissionHandler{service: service.NewPermissionService(repository.NewPermissionRepositoryDB(conn))}
 	router := mux.NewRouter()
 
 	router.HandleFunc("/users", uh.CreateUser).Methods("POST")
@@ -46,7 +47,15 @@ func Start() {
 
 	protectedRouter := router.PathPrefix("/").Subrouter()
 	protectedRouter.Use(AuthMiddleware(PasetoToken, redisClient))
-	protectedRouter.HandleFunc("/users", uh.GetUsers).Methods("GET")
+	protectedRouter.HandleFunc("/users", uh.GetUsers).Methods("GET").Name("List Users")
+	protectedRouter.HandleFunc("/roles", rh.CreateRole).Methods("POST").Name("Add Role")
+	protectedRouter.HandleFunc("/roles", rh.ListRoles).Methods("GET").Name("Update Role")
+	protectedRouter.HandleFunc("/assign_roles", rh.AssignUserRole).Methods("POST")
+	protectedRouter.HandleFunc("/roles/{role_id:[0-9]+}", rh.GetRole).Methods("GET")
+	protectedRouter.HandleFunc("/roles/{role_id:[0-9]+}", rh.DeleteRole).Methods("DELETE")
+	protectedRouter.HandleFunc("/permissions", ph.CreatePermission).Methods("POST")
+	protectedRouter.HandleFunc("/permissions", ph.GetPermissions).Methods("GET")
+	protectedRouter.HandleFunc("/permissions_assign", ph.AssignPermissions).Methods("POST")
 
 	//go RunTaskProcessor(redisOpt, queries)
 	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, *queries)

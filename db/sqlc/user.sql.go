@@ -34,7 +34,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, username, email, password FROM users WHERE username = $1
+SELECT id, username, email, password FROM users WHERE username = $1 LIMIT 1
 `
 
 func (q *Queries) GetUser(ctx context.Context, username pgtype.Text) (Users, error) {
@@ -45,6 +45,43 @@ func (q *Queries) GetUser(ctx context.Context, username pgtype.Text) (Users, err
 		&i.Username,
 		&i.Email,
 		&i.Password,
+	)
+	return i, err
+}
+
+const getUserRolesPermissions = `-- name: GetUserRolesPermissions :one
+SELECT
+    u.id AS user_id,
+    u.username AS user_name,
+    u.email AS user_email,
+    COALESCE(json_agg(DISTINCT r.*) FILTER (WHERE r.id IS NOT NULL), '[]') AS roles,
+    COALESCE(json_agg(DISTINCT p.*) FILTER (WHERE p.id IS NOT NULL), '[]') AS permissions
+FROM users u
+         LEFT JOIN user_roles ur ON u.id = ur.user_id
+         LEFT JOIN roles r ON ur.role_id = r.id
+         LEFT JOIN role_permissions rp ON r.id = rp.role_id
+         LEFT JOIN permissions p ON rp.permission_id = p.id
+WHERE u.id = $1
+GROUP BY u.id
+`
+
+type GetUserRolesPermissionsRow struct {
+	UserID      int64       `json:"user_id"`
+	UserName    pgtype.Text `json:"user_name"`
+	UserEmail   pgtype.Text `json:"user_email"`
+	Roles       interface{} `json:"roles"`
+	Permissions interface{} `json:"permissions"`
+}
+
+func (q *Queries) GetUserRolesPermissions(ctx context.Context, id int64) (GetUserRolesPermissionsRow, error) {
+	row := q.db.QueryRow(ctx, getUserRolesPermissions, id)
+	var i GetUserRolesPermissionsRow
+	err := row.Scan(
+		&i.UserID,
+		&i.UserName,
+		&i.UserEmail,
+		&i.Roles,
+		&i.Permissions,
 	)
 	return i, err
 }

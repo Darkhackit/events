@@ -8,6 +8,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Permissions struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+type RolePermissions struct {
+	RoleID       pgtype.Int4 `json:"role_id"`
+	PermissionID pgtype.Int4 `json:"permission_id"`
+}
+
+type Roles struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+type UserRoles struct {
+	UserID pgtype.Int4 `json:"user_id"`
+	RoleID pgtype.Int4 `json:"role_id"`
+}
+
 type Users struct {
 	ID       int64       `json:"id"`
 	Username pgtype.Text `json:"username"`

@@ -11,9 +11,30 @@ import (
 )
 
 type Querier interface {
+	AssignPermissionToRole(ctx context.Context, arg AssignPermissionToRoleParams) error
+	// -- name: AssignPermissionsToRoleBatch :exec
+	// INSERT INTO role_permissions (role_id, permission_id)
+	// VALUES ($1, unnest($2))
+	// ON CONFLICT (role_id, permission_id) DO NOTHING;
+	AssignPermissionsToRoleBatch(ctx context.Context, arg AssignPermissionsToRoleBatchParams) error
+	AssignRoleToUser(ctx context.Context, arg AssignRoleToUserParams) error
+	CreatePermission(ctx context.Context, name string) (Permissions, error)
+	CreateRole(ctx context.Context, name string) (Roles, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (Users, error)
+	DeletePermission(ctx context.Context, id int32) error
+	DeleteRole(ctx context.Context, id int32) error
+	GetPermission(ctx context.Context, id int32) (Permissions, error)
+	GetPermissions(ctx context.Context) ([]Permissions, error)
+	GetRole(ctx context.Context, id int32) (Roles, error)
+	GetRolePermissions(ctx context.Context, roleID pgtype.Int4) ([]Permissions, error)
+	GetRoles(ctx context.Context) ([]GetRolesRow, error)
 	GetUser(ctx context.Context, username pgtype.Text) (Users, error)
+	GetUserRoles(ctx context.Context, userID pgtype.Int4) ([]Roles, error)
+	GetUserRolesPermissions(ctx context.Context, id int64) (GetUserRolesPermissionsRow, error)
 	GetUsers(ctx context.Context) ([]Users, error)
+	RemoveAllPermissionsFromRole(ctx context.Context, roleID pgtype.Int4) error
+	UpdatePermission(ctx context.Context, arg UpdatePermissionParams) (Permissions, error)
+	UpdateRole(ctx context.Context, arg UpdateRoleParams) (Roles, error)
 }
 
 var _ Querier = (*Queries)(nil)
